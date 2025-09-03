@@ -44,7 +44,7 @@ pub enum Order {
 /// let expr    = parse(&"(λa.λb.λc.a (λd.λe.e (d b)) (λd.c) (λd.d)) (λa.λb.a b)", Classic).unwrap();
 /// let reduced = parse(&"λa.λb.b", Classic).unwrap();
 ///
-/// assert_eq!(beta(expr, NOR, 0), reduced);
+/// assert_eq!(beta(expr.term, NOR, 0), reduced.term);
 /// ```
 pub fn beta(mut term: Term, order: Order, limit: usize) -> Term {
     term.reduce(order, limit);
@@ -62,9 +62,9 @@ impl Term {
     /// let term2      = parse(&"λ51", DeBruijn).unwrap();
     /// let result     = parse(&"λ3(λ61)(λ1(λ71))", DeBruijn).unwrap();
     ///
-    /// term1.apply(&term2);
+    /// term1.term.apply(&term2.term).unwrap();
     ///
-    /// assert_eq!(term1, result);
+    /// assert_eq!(term1.term, result.term);
     /// ```
     /// # Errors
     ///
@@ -142,9 +142,9 @@ impl Term {
     /// let mut expression = parse(&"(λa.λb.λc.b (a b c)) (λa.λb.b)", Classic).unwrap();
     /// let reduced        = parse(&"λa.λb.a b", Classic).unwrap();
     ///
-    /// expression.reduce(NOR, 0);
+    /// expression.term.reduce(NOR, 0);
     ///
-    /// assert_eq!(expression, reduced);
+    /// assert_eq!(expression.term, reduced.term);
     /// ```
     pub fn reduce(&mut self, order: Order, limit: usize) -> usize {
         let mut count = 0;

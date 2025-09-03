@@ -27,7 +27,7 @@ fn parse_debruijn_and_classic() -> Result<(), ParseError> {
     ] {
         let term_dbr = parse(dbr, DeBruijn)?;
         let term_cla = parse(cla, Classic)?;
-        assert_eq!(term_dbr, term_cla);
+        assert_eq!(term_dbr.term, term_cla.term);
     }
     Ok(())
 }

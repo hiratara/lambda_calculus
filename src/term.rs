@@ -50,6 +50,15 @@ pub enum Term {
     App(Box<(Term, Term)>),
 }
 
+/// A `Term` with an associated context of free variable names.
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+pub struct NamedTerm {
+    /// the underlying `Term`
+    pub term: Term,
+    /// the context of free variable names
+    pub context: Vec<String>
+}
+
 /// An error that can be returned when an inapplicable function is applied to a `Term`.
 #[derive(Debug, PartialEq, Eq)]
 pub enum TermError {
@@ -503,6 +512,59 @@ impl fmt::Display for Term {
     }
 }
 
+impl fmt::Display for NamedTerm {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let max_depth = self.term.max_depth();
+        write!(f, "{}", show_precedence_cla_named(&self.term, 0, max_depth, &self.context, 0))
+    }
+}
+
+fn show_precedence_cla_named(
+    term: &Term,
+    context_precedence: usize,
+    max_depth: u32,
+    context: &[String],
+    depth: u32,
+) -> String {
+    match term {
+        Var(0) => "undefined".to_owned(),
+        Var(i) => {
+            let i = *i as u32;
+            if i <= depth { // bound variable
+                let ix = depth - i;
+                base26_encode(ix)
+            } else { // free variable
+                let ix = max_depth + i - depth - 1;
+                if (ix as usize) < context.len() {
+                    context[ix as usize].clone()
+                } else {
+                    base26_encode(ix)
+                }
+            }
+        }
+        Abs(ref t) => {
+            let ret = {
+                format!(
+                    "{}{}.{}",
+                    LAMBDA,
+                    base26_encode(depth),
+                    show_precedence_cla_named(t, 0, max_depth, context, depth + 1)
+                )
+            };
+            parenthesize_if(&ret, context_precedence > 1).into()
+        }
+        App(boxed) => {
+            let (ref t1, ref t2) = **boxed;
+            let ret = format!(
+                "{} {}",
+                show_precedence_cla_named(t1, 2, max_depth, context, depth),
+                show_precedence_cla_named(t2, 3, max_depth, context, depth)
+            );
+            parenthesize_if(&ret, context_precedence == 3).into()
+        }
+    }
+}
+
 fn base26_encode(mut n: u32) -> String {
     let mut buf = Vec::<u8>::new();
     n += 1;
@@ -585,7 +647,7 @@ fn show_precedence_dbr(term: &Term, context_precedence: usize) -> String {
     }
 }
 
-fn parenthesize_if(input: &str, condition: bool) -> Cow<str> {
+fn parenthesize_if(input: &str, condition: bool) -> Cow<'_, str> {
     if condition {
         format!("({})", input).into()
     } else {

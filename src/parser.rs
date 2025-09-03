@@ -6,7 +6,7 @@ use self::ParseError::*;
 use self::Token::*;
 pub use crate::term::Notation::*;
 use crate::term::Term::*;
-use crate::term::{abs, app, Notation, Term};
+use crate::term::{abs, app, NamedTerm, Notation, Term};
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt;
@@ -142,8 +142,11 @@ pub fn tokenize_cla(input: &str) -> Result<Vec<CToken>, ParseError> {
 }
 
 #[doc(hidden)]
-pub fn convert_classic_tokens(tokens: &[CToken]) -> Vec<Token> {
-    _convert_classic_tokens(tokens, &mut VecDeque::with_capacity(tokens.len()), &mut 0)
+pub fn convert_classic_tokens(tokens: &[CToken]) -> (Vec<Token>, Vec<String>) {
+    let mut stack = VecDeque::with_capacity(tokens.len());
+    let tokens = _convert_classic_tokens(tokens, &mut stack, &mut 0);
+    let context = stack.into_iter().rev().map(String::from).collect();
+    (tokens, context)
 }
 
 fn _convert_classic_tokens<'t>(
@@ -230,7 +233,7 @@ fn _get_ast(tokens: &[Token], pos: &mut usize) -> Result<Expression, ParseError>
 
 /// Attempts to parse the input `&str` as a lambda `Term` encoded in the given `Notation`.
 ///
-/// - lambdas can be represented either with the greek letter (λ) or a backslash (\\ -
+/// - lambdas can be represented either with the greek letter (λ) or a backslash (\ - 
 /// less aesthetic, but only one byte in size)
 /// - the identifiers in `Classic` notation are `String`s of alphabetic Unicode characters
 /// - `Classic` notation ignores whitespaces where unambiguous
@@ -242,19 +245,20 @@ fn _get_ast(tokens: &[Token], pos: &mut usize) -> Result<Expression, ParseError>
 /// use lambda_calculus::*;
 /// use lambda_calculus::combinators::{S, Y};
 ///
-/// assert_eq!(parse(&"λf.(λx.f (x x)) (λx.f (x x))", Classic), Ok(Y()));
-/// assert_eq!(parse(&"λƒ.(λℵ.ƒ(ℵ ℵ))(λℵ.ƒ(ℵ ℵ))", Classic),  Ok(Y()));
+/// assert_eq!(parse(&"λf.(λx.f (x x)) (λx.f (x x))", Classic).unwrap().term, Y());
+/// assert_eq!(parse(&"λƒ.(λℵ.ƒ(ℵ ℵ))(λℵ.ƒ(ℵ ℵ))", Classic).unwrap().term,  Y());
 ///
-/// assert_eq!(parse(  &"λλλ31(21)",     DeBruijn), Ok(S()));
-/// assert_eq!(parse(&r#"\\\3 1 (2 1)"#, DeBruijn), Ok(S()));
+/// assert_eq!(parse(  &"λλλ31(21)",     DeBruijn).unwrap().term, S());
+/// assert_eq!(parse(&r#"\\\3 1 (2 1)"#, DeBruijn).unwrap().term, S());
 /// ```
 ///
 /// # Errors
 ///
 /// Returns a `ParseError` when a lexing or syntax error is encountered.
-pub fn parse(input: &str, notation: Notation) -> Result<Term, ParseError> {
-    let tokens = if notation == DeBruijn {
-        tokenize_dbr(input)?
+
+pub fn parse(input: &str, notation: Notation) -> Result<NamedTerm, ParseError> {
+    let (tokens, context) = if notation == DeBruijn {
+        (tokenize_dbr(input)?, vec![])
     } else {
         convert_classic_tokens(&tokenize_cla(input)?)
     };
@@ -266,7 +270,9 @@ pub fn parse(input: &str, notation: Notation) -> Result<Term, ParseError> {
         Err(InvalidExpression)
     };
 
-    fold_exprs(&exprs?)
+    let term = fold_exprs(&exprs?)?;
+
+    Ok(NamedTerm { term, context })
 }
 
 #[doc(hidden)]
@@ -362,7 +368,7 @@ mod tests {
         assert!(tokens_dbr.is_ok());
 
         assert_eq!(
-            convert_classic_tokens(&tokens_cla.unwrap()),
+            convert_classic_tokens(&tokens_cla.unwrap()).0,
             tokens_dbr.unwrap()
         );
     }
@@ -379,7 +385,7 @@ mod tests {
         assert!(tokens_dbr.is_ok());
 
         assert_eq!(
-            convert_classic_tokens(&tokens_cla.unwrap()),
+            convert_classic_tokens(&tokens_cla.unwrap()).0,
             tokens_dbr.unwrap()
         );
     }
@@ -411,10 +417,13 @@ mod tests {
         let y = "λ(λ2(11))(λ2(11))";
         assert_eq!(
             parse(y, DeBruijn).unwrap(),
-            abs(app(
-                abs(app(Var(2), app(Var(1), Var(1)))),
-                abs(app(Var(2), app(Var(1), Var(1))))
-            ))
+            NamedTerm {
+                term: abs(app(
+                    abs(app(Var(2), app(Var(1), Var(1)))),
+                    abs(app(Var(2), app(Var(1), Var(1))))
+                )),
+                context: vec![]
+            }
         );
     }
 
@@ -423,22 +432,25 @@ mod tests {
         let quine = "λ1((λ11)(λλλλλ14(3(55)2)))1";
         assert_eq!(
             parse(quine, DeBruijn).unwrap(),
-            abs(app(
-                app(
-                    Var(1),
+            NamedTerm {
+                term: abs(app(
                     app(
-                        abs(app(Var(1), Var(1))),
-                        abs!(
-                            5,
-                            app(
-                                app(Var(1), Var(4)),
-                                app(app(Var(3), app(Var(5), Var(5))), Var(2))
+                        Var(1),
+                        app(
+                            abs(app(Var(1), Var(1))),
+                            abs!(
+                                5,
+                                app(
+                                    app(Var(1), Var(4)),
+                                    app(app(Var(3), app(Var(5), Var(5))), Var(2))
+                                )
                             )
                         )
-                    )
-                ),
-                Var(1)
-            ))
+                    ),
+                    Var(1)
+                )),
+                context: vec![]
+            }
         );
     }
 
@@ -448,88 +460,91 @@ mod tests {
                    (λ4(λ4(λ2(14)))5))))(33)2)(λ1((λ11)(λ11)))";
         assert_eq!(
             parse(blc, DeBruijn).unwrap(),
-            app(
-                app(
-                    abs(app(Var(1), Var(1))),
-                    abs!(
-                        3,
-                        app(
+            NamedTerm {
+                term: app(
+                    app(
+                        abs(app(Var(1), Var(1))),
+                        abs!(
+                            3,
                             app(
                                 app(
-                                    Var(1),
-                                    abs!(
-                                        4,
-                                        app(
-                                            Var(3),
-                                            abs(app(
-                                                app(
-                                                    Var(5),
+                                    app(
+                                        Var(1),
+                                        abs!(
+                                            4,
+                                            app(
+                                                Var(3),
+                                                abs(app(
                                                     app(
-                                                        Var(3),
-                                                        abs(app(
-                                                            app(
-                                                                Var(2),
+                                                        Var(5),
+                                                        app(
+                                                            Var(3),
+                                                            abs(app(
                                                                 app(
-                                                                    Var(3),
-                                                                    abs!(
-                                                                        2,
-                                                                        app(
-                                                                            Var(3),
-                                                                            abs(app(
-                                                                                app(Var(1), Var(2)),
-                                                                                Var(3)
-                                                                            ))
+                                                                    Var(2),
+                                                                    app(
+                                                                        Var(3),
+                                                                        abs!(
+                                                                            2,
+                                                                            app(
+                                                                                Var(3),
+                                                                                abs(app(
+                                                                                    app(Var(1), Var(2)),
+                                                                                    Var(3)
+                                                                                ))
+                                                                            )
                                                                         )
                                                                     )
+                                                                ),
+                                                                app(
+                                                                    Var(4),
+                                                                    abs(app(
+                                                                        Var(4),
+                                                                        abs(app(
+                                                                            app(Var(3), Var(1)),
+                                                                            app(Var(2), Var(1))
+                                                                        ))
+                                                                    ))
                                                                 )
-                                                            ),
+                                                            ))
+                                                        )
+                                                    ),
+                                                    app(
+                                                        app(
+                                                            Var(1),
+                                                            app(Var(2), abs(app(Var(1), Var(2))))
+                                                        ),
+                                                        abs(app(
                                                             app(
                                                                 Var(4),
                                                                 abs(app(
                                                                     Var(4),
                                                                     abs(app(
-                                                                        app(Var(3), Var(1)),
-                                                                        app(Var(2), Var(1))
+                                                                        Var(2),
+                                                                        app(Var(1), Var(4))
                                                                     ))
                                                                 ))
-                                                            )
+                                                            ),
+                                                            Var(5)
                                                         ))
                                                     )
-                                                ),
-                                                app(
-                                                    app(
-                                                        Var(1),
-                                                        app(Var(2), abs(app(Var(1), Var(2))))
-                                                    ),
-                                                    abs(app(
-                                                        app(
-                                                            Var(4),
-                                                            abs(app(
-                                                                Var(4),
-                                                                abs(app(
-                                                                    Var(2),
-                                                                    app(Var(1), Var(4))
-                                                                ))
-                                                            ))
-                                                        ),
-                                                        Var(5)
-                                                    ))
-                                                )
-                                            ))
+                                                ))
+                                            )
                                         )
-                                    )
+                                    ),
+                                    app(Var(3), Var(3))
                                 ),
-                                app(Var(3), Var(3))
-                            ),
-                            Var(2)
+                                Var(2)
+                            )
                         )
-                    )
+                    ),
+                    abs(app(
+                        Var(1),
+                        app(abs(app(Var(1), Var(1))), abs(app(Var(1), Var(1))))
+                    ))
                 ),
-                abs(app(
-                    Var(1),
-                    app(abs(app(Var(1), Var(1))), abs(app(Var(1), Var(1))))
-                ))
-            )
+                context: vec![]
+            }
         );
     }
 }

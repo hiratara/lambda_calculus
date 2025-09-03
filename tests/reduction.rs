@@ -9,12 +9,12 @@ use std::thread;
 fn reduction_nor() {
     let reduces_instantly = parse("(λλ1)((λλλ((32)1))(λλ2))", DeBruijn).unwrap();
     assert_eq!(
-        beta(reduces_instantly.clone(), NOR, 0),
-        beta(reduces_instantly, NOR, 1)
+        beta(reduces_instantly.term.clone(), NOR, 0),
+        beta(reduces_instantly.term, NOR, 1)
     );
 
     let should_reduce = parse("(λ2)((λ111)(λ111))", DeBruijn).unwrap();
-    assert_eq!(beta(should_reduce, NOR, 0), Var(1));
+    assert_eq!(beta(should_reduce.term, NOR, 0), Var(1));
 
     let does_reduce = app(abs(Var(2)), O());
     assert_eq!(beta(does_reduce, NOR, 0), Var(1));
@@ -55,11 +55,11 @@ fn reduction_zero_plus_one() -> Result<(), ParseError> {
         "(λm.λn.λs.λz. m s (n s z)) (λs.λz. z) (λs.λz. s z) s z",
         Classic,
     )?;
-    expr.reduce(CBV, 2);
-    assert_eq!(expr, parse("(λλ(λλ1)2((λλ21)21))12", DeBruijn)?);
-    expr.reduce(CBV, 6);
-    assert_eq!(expr, parse("12", DeBruijn)?);
-    assert_eq!(expr.to_string(), "a b");
+    expr.term.reduce(CBV, 2);
+    assert_eq!(expr.term, parse("(λλ(λλ1)2((λλ21)21))12", DeBruijn)?.term);
+    expr.term.reduce(CBV, 6);
+    assert_eq!(expr.term, parse("12", DeBruijn)?.term);
+    assert_eq!(expr.to_string(), "s z");
     Ok(())
 }
 
@@ -75,7 +75,7 @@ fn reduction_huge() {
 
     let handler = builder
         .spawn(|| {
-            beta(app!(factorial, church_ten), HAP, 0);
+            beta(app!(factorial.term, church_ten.term), HAP, 0);
         })
         .unwrap();
 
