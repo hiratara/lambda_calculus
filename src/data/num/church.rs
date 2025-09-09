@@ -4,8 +4,8 @@ use crate::combinators::{I, K, Z};
 use crate::data::boolean::{and, fls, not, or, tru};
 use crate::data::num::{parigot, scott, stumpfu};
 use crate::data::pair::pair;
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Produces a Church-encoded number zero; equivalent to `boolean::fls`.
 ///
@@ -18,7 +18,7 @@ use crate::term::{abs, app, Term};
 ///
 /// assert_eq!(zero(), 0.into_church());
 /// ```
-pub fn zero() -> Term {
+pub fn zero() -> DeBruijnTerm {
     fls()
 }
 
@@ -35,7 +35,7 @@ pub fn zero() -> Term {
 /// assert_eq!(beta(app(is_zero(), 0.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_zero(), 1.into_church()), NOR, 0), false.into());
 /// ```
-pub fn is_zero() -> Term {
+pub fn is_zero() -> DeBruijnTerm {
     abs(app!(Var(1), abs(fls()), tru()))
 }
 
@@ -50,7 +50,7 @@ pub fn is_zero() -> Term {
 ///
 /// assert_eq!(one(), 1.into_church());
 /// ```
-pub fn one() -> Term {
+pub fn one() -> DeBruijnTerm {
     abs!(2, app(Var(2), Var(1)))
 }
 
@@ -66,7 +66,7 @@ pub fn one() -> Term {
 /// assert_eq!(beta(app(succ(), 0.into_church()), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app(succ(), 1.into_church()), NOR, 0), 2.into_church());
 /// ```
-pub fn succ() -> Term {
+pub fn succ() -> DeBruijnTerm {
     abs!(3, app(Var(2), app!(Var(3), Var(2), Var(1))))
 }
 
@@ -82,7 +82,7 @@ pub fn succ() -> Term {
 /// assert_eq!(beta(app(pred(), 1.into_church()), NOR, 0), 0.into_church());
 /// assert_eq!(beta(app(pred(), 3.into_church()), NOR, 0), 2.into_church());
 /// ```
-pub fn pred() -> Term {
+pub fn pred() -> DeBruijnTerm {
     abs!(
         3,
         app!(
@@ -106,7 +106,7 @@ pub fn pred() -> Term {
 /// assert_eq!(beta(app!(add(), 1.into_church(), 2.into_church()), NOR, 0), 3.into_church());
 /// assert_eq!(beta(app!(add(), 2.into_church(), 3.into_church()), NOR, 0), 5.into_church());
 /// ```
-pub fn add() -> Term {
+pub fn add() -> DeBruijnTerm {
     abs!(2, app!(Var(1), succ(), Var(2)))
 }
 
@@ -123,7 +123,7 @@ pub fn add() -> Term {
 /// assert_eq!(beta(app!(sub(), 3.into_church(), 1.into_church()), NOR, 0), 2.into_church());
 /// assert_eq!(beta(app!(sub(), 5.into_church(), 2.into_church()), NOR, 0), 3.into_church());
 /// ```
-pub fn sub() -> Term {
+pub fn sub() -> DeBruijnTerm {
     abs!(2, app!(Var(1), pred(), Var(2)))
 }
 
@@ -139,7 +139,7 @@ pub fn sub() -> Term {
 /// assert_eq!(beta(app!(mul(), 1.into_church(), 2.into_church()), NOR, 0), 2.into_church());
 /// assert_eq!(beta(app!(mul(), 2.into_church(), 3.into_church()), NOR, 0), 6.into_church());
 /// ```
-pub fn mul() -> Term {
+pub fn mul() -> DeBruijnTerm {
     abs!(3, app(Var(3), app(Var(2), Var(1))))
 }
 
@@ -156,7 +156,7 @@ pub fn mul() -> Term {
 /// assert_eq!(beta(app!(pow(), 2.into_church(), 1.into_church()), NOR, 0), 2.into_church());
 /// assert_eq!(beta(app!(pow(), 2.into_church(), 3.into_church()), NOR, 0), 8.into_church());
 /// ```
-pub fn pow() -> Term {
+pub fn pow() -> DeBruijnTerm {
     abs!(2, app!(is_zero(), Var(1), one(), app(Var(1), Var(2))))
 }
 
@@ -175,7 +175,7 @@ pub fn pow() -> Term {
 /// assert_eq!(beta(app!(lt(), 0.into_church(), 1.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app!(lt(), 1.into_church(), 0.into_church()), NOR, 0), false.into());
 /// ```
-pub fn lt() -> Term {
+pub fn lt() -> DeBruijnTerm {
     abs!(2, app(not(), app!(leq(), Var(1), Var(2))))
 }
 
@@ -194,7 +194,7 @@ pub fn lt() -> Term {
 /// assert_eq!(beta(app!(leq(), 0.into_church(), 1.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app!(leq(), 1.into_church(), 0.into_church()), NOR, 0), false.into());
 /// ```
-pub fn leq() -> Term {
+pub fn leq() -> DeBruijnTerm {
     abs!(2, app(is_zero(), app!(sub(), Var(2), Var(1))))
 }
 
@@ -213,7 +213,7 @@ pub fn leq() -> Term {
 /// assert_eq!(beta(app!(eq(), 0.into_church(), 1.into_church()), NOR, 0), false.into());
 /// assert_eq!(beta(app!(eq(), 1.into_church(), 0.into_church()), NOR, 0), false.into());
 /// ```
-pub fn eq() -> Term {
+pub fn eq() -> DeBruijnTerm {
     abs!(
         2,
         app!(
@@ -239,7 +239,7 @@ pub fn eq() -> Term {
 /// assert_eq!(beta(app!(neq(), 0.into_church(), 1.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app!(neq(), 1.into_church(), 0.into_church()), NOR, 0), true.into());
 /// ```
-pub fn neq() -> Term {
+pub fn neq() -> DeBruijnTerm {
     abs!(
         2,
         app!(
@@ -265,7 +265,7 @@ pub fn neq() -> Term {
 /// assert_eq!(beta(app!(geq(), 0.into_church(), 1.into_church()), NOR, 0), false.into());
 /// assert_eq!(beta(app!(geq(), 1.into_church(), 0.into_church()), NOR, 0), true.into());
 /// ```
-pub fn geq() -> Term {
+pub fn geq() -> DeBruijnTerm {
     abs!(2, app!(leq(), Var(1), Var(2)))
 }
 
@@ -284,7 +284,7 @@ pub fn geq() -> Term {
 /// assert_eq!(beta(app!(gt(), 0.into_church(), 1.into_church()), NOR, 0), false.into());
 /// assert_eq!(beta(app!(gt(), 1.into_church(), 0.into_church()), NOR, 0), true.into());
 /// ```
-pub fn gt() -> Term {
+pub fn gt() -> DeBruijnTerm {
     abs!(2, app(not(), app!(leq(), Var(2), Var(1))))
 }
 
@@ -311,7 +311,7 @@ pub fn gt() -> Term {
 /// # Errors
 ///
 /// This function will loop indefinitely if the divisor is `zero()`.
-pub fn div() -> Term {
+pub fn div() -> DeBruijnTerm {
     app!(
         Z(),
         abs!(
@@ -350,7 +350,7 @@ pub fn div() -> Term {
 /// # Errors
 ///
 /// This function will loop indefinitely if the second argument is `zero()`
-pub fn quot() -> Term {
+pub fn quot() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -385,7 +385,7 @@ pub fn quot() -> Term {
 /// # Errors
 ///
 /// This function will loop indefinitely if the second argument is `zero()`
-pub fn rem() -> Term {
+pub fn rem() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -418,7 +418,7 @@ pub fn rem() -> Term {
 /// # Errors
 ///
 /// This function may overflow the stack if its argument is high enough.
-pub fn fac() -> Term {
+pub fn fac() -> DeBruijnTerm {
     abs(app!(
         Var(1),
         abs!(
@@ -442,7 +442,7 @@ pub fn fac() -> Term {
 ///
 /// assert_eq!(beta(app!(min(), 4.into_church(), 3.into_church()), NOR, 0), 3.into_church());
 /// ```
-pub fn min() -> Term {
+pub fn min() -> DeBruijnTerm {
     abs!(2, app!(app!(leq(), Var(2), Var(1)), Var(2), Var(1)))
 }
 
@@ -457,7 +457,7 @@ pub fn min() -> Term {
 ///
 /// assert_eq!(beta(app!(max(), 4.into_church(), 3.into_church()), NOR, 0), 4.into_church());
 /// ```
-pub fn max() -> Term {
+pub fn max() -> DeBruijnTerm {
     abs!(2, app!(app!(leq(), Var(2), Var(1)), Var(1), Var(2)))
 }
 
@@ -475,7 +475,7 @@ pub fn max() -> Term {
 /// assert_eq!(beta(app!(shl(), 1.into_church(), 0.into_church()), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app!(shl(), 2.into_church(), 0.into_church()), NOR, 0), 2.into_church());
 /// ```
-pub fn shl() -> Term {
+pub fn shl() -> DeBruijnTerm {
     abs!(
         2,
         app!(mul(), Var(2), app!(pow(), app(succ(), one()), Var(1)))
@@ -497,7 +497,7 @@ pub fn shl() -> Term {
 /// assert_eq!(beta(app!(shr(), 2.into_church(), 1.into_church()), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app!(shr(), 2.into_church(), 0.into_church()), NOR, 0), 2.into_church());
 /// ```
-pub fn shr() -> Term {
+pub fn shr() -> DeBruijnTerm {
     abs!(
         2,
         app!(
@@ -524,7 +524,7 @@ pub fn shr() -> Term {
 /// assert_eq!(beta(app(is_even(), 2.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_even(), 3.into_church()), NOR, 0), false.into());
 /// ```
-pub fn is_even() -> Term {
+pub fn is_even() -> DeBruijnTerm {
     abs(app!(Var(1), not(), tru()))
 }
 
@@ -543,7 +543,7 @@ pub fn is_even() -> Term {
 /// assert_eq!(beta(app(is_odd(), 2.into_church()), NOR, 0), false.into());
 /// assert_eq!(beta(app(is_odd(), 3.into_church()), NOR, 0), true.into());
 /// ```
-pub fn is_odd() -> Term {
+pub fn is_odd() -> DeBruijnTerm {
     abs(app!(Var(1), not(), fls()))
 }
 
@@ -560,7 +560,7 @@ pub fn is_odd() -> Term {
 /// assert_eq!(beta(app(to_scott(), 1.into_church()), NOR, 0), 1.into_scott());
 /// assert_eq!(beta(app(to_scott(), 2.into_church()), NOR, 0), 2.into_scott());
 /// ```
-pub fn to_scott() -> Term {
+pub fn to_scott() -> DeBruijnTerm {
     abs(app!(Var(1), scott::succ(), scott::zero()))
 }
 
@@ -577,7 +577,7 @@ pub fn to_scott() -> Term {
 /// assert_eq!(beta(app(to_parigot(), 1.into_church()), NOR, 0), 1.into_parigot());
 /// assert_eq!(beta(app(to_parigot(), 2.into_church()), NOR, 0), 2.into_parigot());
 /// ```
-pub fn to_parigot() -> Term {
+pub fn to_parigot() -> DeBruijnTerm {
     abs(app!(Var(1), parigot::succ(), parigot::zero()))
 }
 
@@ -594,6 +594,6 @@ pub fn to_parigot() -> Term {
 /// assert_eq!(beta(app(to_stumpfu(), 1.into_church()), NOR, 0), 1.into_stumpfu());
 /// assert_eq!(beta(app(to_stumpfu(), 2.into_church()), NOR, 0), 2.into_stumpfu());
 /// ```
-pub fn to_stumpfu() -> Term {
+pub fn to_stumpfu() -> DeBruijnTerm {
     abs(app!(Var(1), stumpfu::succ(), stumpfu::zero()))
 }

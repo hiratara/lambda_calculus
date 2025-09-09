@@ -2,13 +2,13 @@
 
 use crate::data::boolean::{fls, tru};
 use crate::data::pair::{fst, pair, snd};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term, UD};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm, UD};
 
 /// Produces a `nil`, the last link of a Church-encoded list; equivalent to `boolean::tru`.
 ///
 /// NIL ≡ λab.a ≡ λ λ 2 ≡ TRUE
-pub fn nil() -> Term {
+pub fn nil() -> DeBruijnTerm {
     tru()
 }
 
@@ -23,7 +23,7 @@ pub fn nil() -> Term {
 ///
 /// assert_eq!(beta(app(is_nil(), nil()), NOR, 0), true.into());
 /// ```
-pub fn is_nil() -> Term {
+pub fn is_nil() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), abs!(2, fls())))
 }
 
@@ -58,7 +58,7 @@ pub fn is_nil() -> Term {
 ///     list_into
 /// );
 /// ```
-pub fn cons() -> Term {
+pub fn cons() -> DeBruijnTerm {
     abs!(
         4,
         app!(Var(1), Var(4), app!(abs(Var(1)), Var(3), Var(2), Var(1)))
@@ -81,7 +81,7 @@ pub fn cons() -> Term {
 ///     1.into_church()
 /// );
 /// ```
-pub fn head() -> Term {
+pub fn head() -> DeBruijnTerm {
     abs(app!(Var(1), UD, abs!(2, Var(2))))
 }
 
@@ -102,7 +102,7 @@ pub fn head() -> Term {
 ///     vec![2, 3].into_church()
 /// );
 /// ```
-pub fn tail() -> Term {
+pub fn tail() -> DeBruijnTerm {
     abs(app!(
         fst(),
         app!(

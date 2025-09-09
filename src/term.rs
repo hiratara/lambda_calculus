@@ -1,7 +1,7 @@
 //! [Lambda terms](https://en.wikipedia.org/wiki/Lambda_calculus#Lambda_terms)
 
+pub use self::DeBruijnTerm::*;
 pub use self::Notation::*;
-pub use self::Term::*;
 use self::TermError::*;
 use std::borrow::Cow;
 use std::error::Error;
@@ -19,7 +19,7 @@ pub const LAMBDA: char = 'λ';
 /// An undefined term that can be used as a value returned by invalid/inapplicable operations, e.g.
 /// obtaining an element of an empty list. Since this implementation uses De Bruijn indices greater
 /// than zero, `Var(0)` will not occur naturally. It is displayed as `undefined`.
-pub const UD: Term = Var(0);
+pub const UD: DeBruijnTerm = Var(0);
 
 /// The notation used for parsing and displaying purposes.
 ///
@@ -41,22 +41,22 @@ pub enum Notation {
 /// A lambda term that is either a variable with a De Bruijn index, an abstraction over a term or
 /// an applicaction of one term to another.
 #[derive(PartialEq, Clone, Hash, Eq)]
-pub enum Term {
+pub enum DeBruijnTerm {
     /// a variable
     Var(usize),
     /// an abstraction
-    Abs(Box<Term>),
+    Abs(Box<DeBruijnTerm>),
     /// an application
-    App(Box<(Term, Term)>),
+    App(Box<(DeBruijnTerm, DeBruijnTerm)>),
 }
 
 /// A `Term` with an associated context of free variable names.
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
-pub struct NamedTerm {
+pub struct Term {
     /// the underlying `Term`
-    pub term: Term,
+    pub term: DeBruijnTerm,
     /// the context of free variable names
-    pub context: Vec<String>
+    pub context: Vec<String>,
 }
 
 /// An error that can be returned when an inapplicable function is applied to a `Term`.
@@ -86,7 +86,7 @@ impl Error for TermError {
     }
 }
 
-impl Term {
+impl DeBruijnTerm {
     /// Returns a variable's De Bruijn index, consuming it in the process.
     ///
     /// # Example
@@ -155,7 +155,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `Abs`traction.
-    pub fn unabs(self) -> Result<Term, TermError> {
+    pub fn unabs(self) -> Result<DeBruijnTerm, TermError> {
         if let Abs(x) = self {
             Ok(*x)
         } else {
@@ -174,7 +174,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `Abs`traction.
-    pub fn unabs_ref(&self) -> Result<&Term, TermError> {
+    pub fn unabs_ref(&self) -> Result<&DeBruijnTerm, TermError> {
         if let Abs(ref x) = *self {
             Ok(x)
         } else {
@@ -193,7 +193,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `Abs`traction.
-    pub fn unabs_mut(&mut self) -> Result<&mut Term, TermError> {
+    pub fn unabs_mut(&mut self) -> Result<&mut DeBruijnTerm, TermError> {
         if let Abs(ref mut x) = *self {
             Ok(x)
         } else {
@@ -212,7 +212,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn unapp(self) -> Result<(Term, Term), TermError> {
+    pub fn unapp(self) -> Result<(DeBruijnTerm, DeBruijnTerm), TermError> {
         if let App(boxed) = self {
             let (lhs, rhs) = *boxed;
             Ok((lhs, rhs))
@@ -232,7 +232,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn unapp_ref(&self) -> Result<(&Term, &Term), TermError> {
+    pub fn unapp_ref(&self) -> Result<(&DeBruijnTerm, &DeBruijnTerm), TermError> {
         if let App(boxed) = self {
             let (ref lhs, ref rhs) = **boxed;
             Ok((lhs, rhs))
@@ -252,7 +252,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn unapp_mut(&mut self) -> Result<(&mut Term, &mut Term), TermError> {
+    pub fn unapp_mut(&mut self) -> Result<(&mut DeBruijnTerm, &mut DeBruijnTerm), TermError> {
         if let App(boxed) = self {
             let (ref mut lhs, ref mut rhs) = **boxed;
             Ok((lhs, rhs))
@@ -272,7 +272,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn lhs(self) -> Result<Term, TermError> {
+    pub fn lhs(self) -> Result<DeBruijnTerm, TermError> {
         if let Ok((lhs, _)) = self.unapp() {
             Ok(lhs)
         } else {
@@ -291,7 +291,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn lhs_ref(&self) -> Result<&Term, TermError> {
+    pub fn lhs_ref(&self) -> Result<&DeBruijnTerm, TermError> {
         if let Ok((lhs, _)) = self.unapp_ref() {
             Ok(lhs)
         } else {
@@ -307,7 +307,7 @@ impl Term {
     ///
     /// assert_eq!(app(Var(1), Var(2)).lhs_mut(), Ok(&mut Var(1)));
     /// ```
-    pub fn lhs_mut(&mut self) -> Result<&mut Term, TermError> {
+    pub fn lhs_mut(&mut self) -> Result<&mut DeBruijnTerm, TermError> {
         if let Ok((lhs, _)) = self.unapp_mut() {
             Ok(lhs)
         } else {
@@ -326,7 +326,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn rhs(self) -> Result<Term, TermError> {
+    pub fn rhs(self) -> Result<DeBruijnTerm, TermError> {
         if let Ok((_, rhs)) = self.unapp() {
             Ok(rhs)
         } else {
@@ -345,7 +345,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn rhs_ref(&self) -> Result<&Term, TermError> {
+    pub fn rhs_ref(&self) -> Result<&DeBruijnTerm, TermError> {
         if let Ok((_, rhs)) = self.unapp_ref() {
             Ok(rhs)
         } else {
@@ -364,7 +364,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `App`lication.
-    pub fn rhs_mut(&mut self) -> Result<&mut Term, TermError> {
+    pub fn rhs_mut(&mut self) -> Result<&mut DeBruijnTerm, TermError> {
         if let Ok((_, rhs)) = self.unapp_mut() {
             Ok(rhs)
         } else {
@@ -441,7 +441,7 @@ impl Term {
     /// assert_eq!(term1.is_isomorphic_to(&term3), true);
     ///
     /// ```
-    pub fn is_isomorphic_to(&self, other: &Term) -> bool {
+    pub fn is_isomorphic_to(&self, other: &DeBruijnTerm) -> bool {
         match (self, other) {
             (Var(x), Var(y)) => x == y,
             (Abs(p), Abs(q)) => p.is_isomorphic_to(q),
@@ -489,7 +489,7 @@ impl Term {
 ///
 /// assert_eq!(abs(Var(1)), Abs(Box::new(Var(1))));
 /// ```
-pub fn abs(term: Term) -> Term {
+pub fn abs(term: DeBruijnTerm) -> DeBruijnTerm {
     Abs(Box::new(term))
 }
 
@@ -502,25 +502,29 @@ pub fn abs(term: Term) -> Term {
 ///
 /// assert_eq!(app(Var(1), Var(2)), App(Box::new((Var(1), Var(2)))));
 /// ```
-pub fn app(lhs: Term, rhs: Term) -> Term {
+pub fn app(lhs: DeBruijnTerm, rhs: DeBruijnTerm) -> DeBruijnTerm {
     App(Box::new((lhs, rhs)))
 }
 
-impl fmt::Display for Term {
+impl fmt::Display for DeBruijnTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", show_precedence_cla(self, 0, self.max_depth(), 0))
     }
 }
 
-impl fmt::Display for NamedTerm {
+impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let max_depth = self.term.max_depth();
-        write!(f, "{}", show_precedence_cla_named(&self.term, 0, max_depth, &self.context, 0))
+        write!(
+            f,
+            "{}",
+            show_precedence_cla_named(&self.term, 0, max_depth, &self.context, 0)
+        )
     }
 }
 
 fn show_precedence_cla_named(
-    term: &Term,
+    term: &DeBruijnTerm,
     context_precedence: usize,
     max_depth: u32,
     context: &[String],
@@ -530,10 +534,12 @@ fn show_precedence_cla_named(
         Var(0) => "undefined".to_owned(),
         Var(i) => {
             let i = *i as u32;
-            if i <= depth { // bound variable
+            if i <= depth {
+                // bound variable
                 let ix = depth - i;
                 base26_encode(ix)
-            } else { // free variable
+            } else {
+                // free variable
                 let ix = max_depth + i - depth - 1;
                 if (ix as usize) < context.len() {
                     context[ix as usize].clone()
@@ -580,7 +586,7 @@ fn base26_encode(mut n: u32) -> String {
 }
 
 fn show_precedence_cla(
-    term: &Term,
+    term: &DeBruijnTerm,
     context_precedence: usize,
     max_depth: u32,
     depth: u32,
@@ -619,13 +625,13 @@ fn show_precedence_cla(
     }
 }
 
-impl fmt::Debug for Term {
+impl fmt::Debug for DeBruijnTerm {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", show_precedence_dbr(self, 0))
     }
 }
 
-fn show_precedence_dbr(term: &Term, context_precedence: usize) -> String {
+fn show_precedence_dbr(term: &DeBruijnTerm, context_precedence: usize) -> String {
     match term {
         Var(0) => "undefined".to_owned(),
         Var(i) => {

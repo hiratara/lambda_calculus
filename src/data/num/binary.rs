@@ -3,20 +3,20 @@
 use crate::combinators::I;
 use crate::data::boolean::{fls, tru};
 use crate::data::pair::{fst, pair, snd};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// A 0 bit; equivalent to `boolean::tru`.
 ///
 /// B0 ≡ λab.a ≡ λ λ 2 ≡ TRUE
-pub fn b0() -> Term {
+pub fn b0() -> DeBruijnTerm {
     tru()
 }
 
 /// A 1 bit; equivalent to `boolean::fls`.
 ///
 /// B1 ≡ λab.b ≡ λ λ 1 ≡ FALSE
-pub fn b1() -> Term {
+pub fn b1() -> DeBruijnTerm {
     fls()
 }
 
@@ -31,7 +31,7 @@ pub fn b1() -> Term {
 ///
 /// assert_eq!(zero(), 0.into_binary());
 /// ```
-pub fn zero() -> Term {
+pub fn zero() -> DeBruijnTerm {
     abs!(3, Var(3))
 }
 
@@ -48,7 +48,7 @@ pub fn zero() -> Term {
 /// assert_eq!(beta(app(is_zero(), 0.into_binary()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_zero(), 1.into_binary()), NOR, 0), false.into());
 /// ```
-pub fn is_zero() -> Term {
+pub fn is_zero() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), I(), abs(fls())))
 }
 
@@ -63,7 +63,7 @@ pub fn is_zero() -> Term {
 ///
 /// assert_eq!(one(), 1.into_binary());
 /// ```
-pub fn one() -> Term {
+pub fn one() -> DeBruijnTerm {
     abs!(3, app(Var(1), Var(3)))
 }
 
@@ -88,7 +88,7 @@ pub fn one() -> Term {
 /// assert_eq!(beta(app(succ(), 1.into_binary()), NOR, 0), 2.into_binary());
 /// assert_eq!(beta(app(succ(), 2.into_binary()), NOR, 0), 3.into_binary());
 /// ```
-pub fn succ() -> Term {
+pub fn succ() -> DeBruijnTerm {
     let z = app!(pair(), zero(), one());
     let a = abs(app(
         Var(1),
@@ -125,7 +125,7 @@ pub fn succ() -> Term {
 /// assert_eq!(beta(app(pred(), 5.into_binary()), NOR, 0), 4.into_binary());
 /// assert_eq!(beta(app(pred(), 6.into_binary()), NOR, 0), 5.into_binary());
 /// ```
-pub fn pred() -> Term {
+pub fn pred() -> DeBruijnTerm {
     let z = app!(pair(), zero(), zero());
     let a = abs(app(
         Var(1),
@@ -153,7 +153,7 @@ pub fn pred() -> Term {
 /// assert_eq!(beta(app(lsb(), 3.into_binary()), NOR, 0), b1());
 /// assert_eq!(beta(app(lsb(), 4.into_binary()), NOR, 0), b0());
 /// ```
-pub fn lsb() -> Term {
+pub fn lsb() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), abs(tru()), abs(fls())))
 }
 
@@ -170,7 +170,7 @@ pub fn lsb() -> Term {
 /// assert_eq!(beta(app(shl0(), 2.into_binary()), NOR, 0), 4.into_binary());
 /// assert_eq!(beta(app(shl0(), 3.into_binary()), NOR, 0), 6.into_binary());
 /// ```
-pub fn shl0() -> Term {
+pub fn shl0() -> DeBruijnTerm {
     abs!(4, app(Var(2), app!(Var(4), Var(3), Var(2), Var(1))))
 }
 
@@ -187,7 +187,7 @@ pub fn shl0() -> Term {
 /// assert_eq!(beta(app(shl1(), 2.into_binary()), NOR, 0), 5.into_binary());
 /// assert_eq!(beta(app(shl1(), 3.into_binary()), NOR, 0), 7.into_binary());
 /// ```
-pub fn shl1() -> Term {
+pub fn shl1() -> DeBruijnTerm {
     abs!(4, app(Var(1), app!(Var(4), Var(3), Var(2), Var(1))))
 }
 
@@ -215,7 +215,7 @@ pub fn shl1() -> Term {
 ///     0.into_binary()
 /// );
 /// ```
-pub fn strip() -> Term {
+pub fn strip() -> DeBruijnTerm {
     let z = app!(pair(), zero(), tru());
     let a = abs(app(
         Var(1),

@@ -2,13 +2,13 @@
 
 use crate::combinators::I;
 use crate::data::boolean::{fls, tru};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Produces a lambda-encoded empty option; equivalent to `boolean::tru`.
 ///
 /// NONE ≡ λns.n ≡ λ λ 2 ≡ TRUE
-pub fn none() -> Term {
+pub fn none() -> DeBruijnTerm {
     tru()
 }
 
@@ -23,7 +23,7 @@ pub fn none() -> Term {
 ///
 /// assert_eq!(beta(app(some(), 1.into_church()), NOR, 0), Some(1).into_church());
 /// ```
-pub fn some() -> Term {
+pub fn some() -> DeBruijnTerm {
     abs!(3, app(Var(1), Var(3)))
 }
 
@@ -40,7 +40,7 @@ pub fn some() -> Term {
 /// assert_eq!(beta(app(is_none(), none()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_none(), Some(1).into_church()), NOR, 0), false.into());
 /// ```
-pub fn is_none() -> Term {
+pub fn is_none() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), abs(fls())))
 }
 
@@ -57,7 +57,7 @@ pub fn is_none() -> Term {
 /// assert_eq!(beta(app(is_some(), none()), NOR, 0), false.into());
 /// assert_eq!(beta(app(is_some(), Some(2).into_church()), NOR, 0), true.into());
 /// ```
-pub fn is_some() -> Term {
+pub fn is_some() -> DeBruijnTerm {
     abs(app!(Var(1), fls(), abs(tru())))
 }
 
@@ -72,12 +72,12 @@ pub fn is_some() -> Term {
 /// use lambda_calculus::data::num::church::succ;
 /// use lambda_calculus::*;
 ///
-/// let some_one: Term = Some(1).into_church();
+/// let some_one: DeBruijnTerm = Some(1).into_church();
 ///
 /// assert_eq!(beta(app!(map(), succ(), some_one), NOR, 0), Some(2).into_church());
 /// assert_eq!(beta(app!(map(), succ(), none()), NOR, 0), none());
 /// ```
-pub fn map() -> Term {
+pub fn map() -> DeBruijnTerm {
     abs!(
         2,
         app!(Var(1), none(), abs(app(some(), app(Var(3), Var(1)))))
@@ -95,12 +95,12 @@ pub fn map() -> Term {
 /// use lambda_calculus::data::num::church::succ;
 /// use lambda_calculus::*;
 ///
-/// let some_one: Term = Some(1).into_church();
+/// let some_one: DeBruijnTerm = Some(1).into_church();
 ///
 /// assert_eq!(beta(app!(map_or(), 0.into_church(), succ(), some_one), NOR, 0), 2.into_church());
 /// assert_eq!(beta(app!(map_or(), 0.into_church(), succ(), none()), NOR, 0), 0.into_church());
 /// ```
-pub fn map_or() -> Term {
+pub fn map_or() -> DeBruijnTerm {
     abs!(3, app!(Var(1), Var(3), Var(2)))
 }
 
@@ -114,12 +114,12 @@ pub fn map_or() -> Term {
 /// use lambda_calculus::data::option::{unwrap_or, none};
 /// use lambda_calculus::*;
 ///
-/// let some_one: Term = Some(1).into_church();
+/// let some_one: DeBruijnTerm = Some(1).into_church();
 ///
 /// assert_eq!(beta(app!(unwrap_or(), 2.into_church(), some_one), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app!(unwrap_or(), 2.into_church(), none()), NOR, 0), 2.into_church());
 /// ```
-pub fn unwrap_or() -> Term {
+pub fn unwrap_or() -> DeBruijnTerm {
     abs!(2, app!(Var(1), Var(2), I()))
 }
 
@@ -135,7 +135,7 @@ pub fn unwrap_or() -> Term {
 /// use lambda_calculus::*;
 ///
 /// // Equivalent to the closure `|x| { Some(x+1) }` in Rust
-/// let some_succ: Term = abs(app(some(), app(succ(), Var(1))));
+/// let some_succ: DeBruijnTerm = abs(app(some(), app(succ(), Var(1))));
 ///
 /// assert_eq!(beta(app!(and_then(), none(), some_succ.clone()), NOR, 0), none());
 /// assert_eq!(beta(
@@ -143,12 +143,12 @@ pub fn unwrap_or() -> Term {
 ///     Some(2).into_church()
 /// );
 /// ```
-pub fn and_then() -> Term {
+pub fn and_then() -> DeBruijnTerm {
     abs!(2, app!(Var(2), none(), Var(1)))
 }
 
-impl From<Option<Term>> for Term {
-    fn from(option: Option<Term>) -> Term {
+impl From<Option<DeBruijnTerm>> for DeBruijnTerm {
+    fn from(option: Option<DeBruijnTerm>) -> DeBruijnTerm {
         match option {
             None => none(),
             Some(value) => abs!(2, app(Var(1), value)),

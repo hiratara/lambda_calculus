@@ -1,8 +1,8 @@
 //! [Lambda-encoded pair](https://en.wikipedia.org/wiki/Church_encoding#Church_pairs)
 
 use crate::data::boolean::{fls, tru};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Applied to two `Term`s it contains them in a lambda-encoded pair.
 ///
@@ -18,7 +18,7 @@ use crate::term::{abs, app, Term};
 ///     (1, 2).into_church()
 /// );
 /// ```
-pub fn pair() -> Term {
+pub fn pair() -> DeBruijnTerm {
     abs!(3, app!(Var(1), Var(3), Var(2)))
 }
 
@@ -36,7 +36,7 @@ pub fn pair() -> Term {
 ///     1.into_church()
 /// );
 /// ```
-pub fn fst() -> Term {
+pub fn fst() -> DeBruijnTerm {
     abs(app(Var(1), tru()))
 }
 
@@ -54,7 +54,7 @@ pub fn fst() -> Term {
 ///     2.into_church()
 /// );
 /// ```
-pub fn snd() -> Term {
+pub fn snd() -> DeBruijnTerm {
     abs(app(Var(1), fls()))
 }
 
@@ -74,7 +74,7 @@ pub fn snd() -> Term {
 ///     3.into_church()
 /// );
 /// ```
-pub fn uncurry() -> Term {
+pub fn uncurry() -> DeBruijnTerm {
     abs!(2, app!(Var(2), app(fst(), Var(1)), app(snd(), Var(1))))
 }
 
@@ -93,7 +93,7 @@ pub fn uncurry() -> Term {
 ///     1.into_church()
 /// );
 /// ```
-pub fn curry() -> Term {
+pub fn curry() -> DeBruijnTerm {
     abs!(3, app(Var(3), app!(pair(), Var(2), Var(1))))
 }
 
@@ -111,12 +111,12 @@ pub fn curry() -> Term {
 ///     (2, 1).into_church()
 /// );
 /// ```
-pub fn swap() -> Term {
+pub fn swap() -> DeBruijnTerm {
     abs(app!(pair(), app(snd(), Var(1)), app(fst(), Var(1))))
 }
 
-impl From<(Term, Term)> for Term {
-    fn from((a, b): (Term, Term)) -> Term {
+impl From<(DeBruijnTerm, DeBruijnTerm)> for DeBruijnTerm {
+    fn from((a, b): (DeBruijnTerm, DeBruijnTerm)) -> DeBruijnTerm {
         abs(app!(Var(1), a, b))
     }
 }

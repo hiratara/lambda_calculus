@@ -3,14 +3,14 @@
 #![allow(missing_docs)]
 
 use crate::data::num::convert::*;
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 macro_rules! make_trait {
     ($trait_name:ident, $function_name:ident) => {
         pub trait $trait_name {
             #[doc = "Performs the conversion."]
-            fn $function_name(self) -> Term;
+            fn $function_name(self) -> DeBruijnTerm;
         }
     };
 }
@@ -20,8 +20,8 @@ make_trait!(IntoChurchList, into_church);
 make_trait!(IntoScottList, into_scott);
 make_trait!(IntoParigotList, into_parigot);
 
-impl IntoPairList for Vec<Term> {
-    fn into_pair_list(self) -> Term {
+impl IntoPairList for Vec<DeBruijnTerm> {
+    fn into_pair_list(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(1));
 
         for t in self.into_iter().rev() {
@@ -32,8 +32,8 @@ impl IntoPairList for Vec<Term> {
     }
 }
 
-impl IntoChurchList for Vec<Term> {
-    fn into_church(self) -> Term {
+impl IntoChurchList for Vec<DeBruijnTerm> {
+    fn into_church(self) -> DeBruijnTerm {
         let mut ret = Var(2);
 
         for t in self.into_iter().rev() {
@@ -45,16 +45,16 @@ impl IntoChurchList for Vec<Term> {
 }
 
 impl<T: IntoChurchNum> IntoChurchList for Vec<T> {
-    fn into_church(self) -> Term {
+    fn into_church(self) -> DeBruijnTerm {
         self.into_iter()
             .map(|t| t.into_church())
-            .collect::<Vec<Term>>()
+            .collect::<Vec<DeBruijnTerm>>()
             .into_church()
     }
 }
 
-impl IntoScottList for Vec<Term> {
-    fn into_scott(self) -> Term {
+impl IntoScottList for Vec<DeBruijnTerm> {
+    fn into_scott(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(2));
 
         for t in self.into_iter().rev() {
@@ -66,16 +66,16 @@ impl IntoScottList for Vec<Term> {
 }
 
 impl<T: IntoScottNum> IntoScottList for Vec<T> {
-    fn into_scott(self) -> Term {
+    fn into_scott(self) -> DeBruijnTerm {
         self.into_iter()
             .map(|t| t.into_scott())
-            .collect::<Vec<Term>>()
+            .collect::<Vec<DeBruijnTerm>>()
             .into_scott()
     }
 }
 
-impl IntoParigotList for Vec<Term> {
-    fn into_parigot(self) -> Term {
+impl IntoParigotList for Vec<DeBruijnTerm> {
+    fn into_parigot(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(2));
 
         for t in self.into_iter().rev() {
@@ -95,10 +95,10 @@ impl IntoParigotList for Vec<Term> {
 }
 
 impl<T: IntoParigotNum> IntoParigotList for Vec<T> {
-    fn into_parigot(self) -> Term {
+    fn into_parigot(self) -> DeBruijnTerm {
         self.into_iter()
             .map(|t| t.into_parigot())
-            .collect::<Vec<Term>>()
+            .collect::<Vec<DeBruijnTerm>>()
             .into_parigot()
     }
 }

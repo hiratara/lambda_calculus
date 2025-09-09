@@ -4,13 +4,13 @@ use crate::combinators::{I, Z};
 use crate::data::boolean::{fls, tru};
 use crate::data::num::church::{is_zero, pred, succ, zero};
 use crate::data::pair::{fst, pair, snd};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Produces a `nil`, the last link of a pair-encoded list; equivalent to `boolean::fls`.
 ///
 /// NIL ≡ λab.b ≡ λ λ 1 ≡ FALSE
-pub fn nil() -> Term {
+pub fn nil() -> DeBruijnTerm {
     fls()
 }
 
@@ -26,7 +26,7 @@ pub fn nil() -> Term {
 /// assert_eq!(beta(app(is_nil(),                vec![].into_pair_list()), NOR, 0),  true.into());
 /// assert_eq!(beta(app(is_nil(), vec![1.into_church()].into_pair_list()), NOR, 0), false.into());
 /// ```
-pub fn is_nil() -> Term {
+pub fn is_nil() -> DeBruijnTerm {
     abs(app!(Var(1), abs!(3, fls()), tru()))
 }
 
@@ -58,7 +58,7 @@ pub fn is_nil() -> Term {
 ///
 /// assert_eq!(beta(list_consed, NOR, 0), list_from_vec);
 /// ```
-pub fn cons() -> Term {
+pub fn cons() -> DeBruijnTerm {
     pair()
 }
 
@@ -75,7 +75,7 @@ pub fn cons() -> Term {
 ///
 /// assert_eq!(beta(app(head(), list), NOR, 0), 1.into_church());
 /// ```
-pub fn head() -> Term {
+pub fn head() -> DeBruijnTerm {
     fst()
 }
 
@@ -96,7 +96,7 @@ pub fn head() -> Term {
 ///     vec![2.into_church(), 3.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn tail() -> Term {
+pub fn tail() -> DeBruijnTerm {
     snd()
 }
 
@@ -115,7 +115,7 @@ pub fn tail() -> Term {
 ///     0.into_church()
 /// );
 /// ```
-pub fn length() -> Term {
+pub fn length() -> DeBruijnTerm {
     app!(
         Z(),
         abs!(
@@ -149,7 +149,7 @@ pub fn length() -> Term {
 ///     1.into_church()
 /// );
 /// ```
-pub fn index() -> Term {
+pub fn index() -> DeBruijnTerm {
     abs!(2, app(head(), app!(Var(2), tail(), Var(1))))
 }
 
@@ -170,7 +170,7 @@ pub fn index() -> Term {
 ///     vec![3.into_church(), 2.into_church(), 1.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn reverse() -> Term {
+pub fn reverse() -> DeBruijnTerm {
     app!(
         Z(),
         abs!(
@@ -206,7 +206,7 @@ pub fn reverse() -> Term {
 ///     vec![1.into_church(), 2.into_church(), 3.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn list() -> Term {
+pub fn list() -> DeBruijnTerm {
     abs(app!(
         Var(1),
         abs!(3, app(Var(3), app!(cons(), Var(1), Var(2)))),
@@ -233,7 +233,7 @@ pub fn list() -> Term {
 ///     vec![1.into_church(), 2.into_church(), 3.into_church(), 4.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn append() -> Term {
+pub fn append() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -271,7 +271,7 @@ pub fn append() -> Term {
 ///     vec![2.into_church(), 3.into_church(), 4.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn map() -> Term {
+pub fn map() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -309,7 +309,7 @@ pub fn map() -> Term {
 /// assert_eq!(beta(app!(foldl(), add(), 0.into_church(), list()), NOR, 0), 6.into_church());
 /// assert_eq!(beta(app!(foldl(), sub(), 6.into_church(), list()), NOR, 0), 0.into_church());
 /// ```
-pub fn foldl() -> Term {
+pub fn foldl() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -348,7 +348,7 @@ pub fn foldl() -> Term {
 /// assert_eq!(beta(app!(foldr(), add(), 0.into_church(), list()), NOR, 0), 6.into_church());
 /// assert_eq!(beta(app!(foldr(), sub(), 6.into_church(), list()), NOR, 0), 0.into_church());
 /// ```
-pub fn foldr() -> Term {
+pub fn foldr() -> DeBruijnTerm {
     abs!(
         3,
         app!(
@@ -396,7 +396,7 @@ pub fn foldr() -> Term {
 ///     vec![2.into_church(), 3.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn filter() -> Term {
+pub fn filter() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -432,7 +432,7 @@ pub fn filter() -> Term {
 ///
 /// assert_eq!(beta(app(last(), list), NOR, 0), 3.into_church());
 /// ```
-pub fn last() -> Term {
+pub fn last() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -468,7 +468,7 @@ pub fn last() -> Term {
 ///
 /// assert_eq!(beta(app(init(), list1), NOR, 0), list2);
 /// ```
-pub fn init() -> Term {
+pub fn init() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -509,7 +509,7 @@ pub fn init() -> Term {
 ///
 /// assert_eq!(beta(app!(zip(), list(), list()), NOR, 0), pairs());
 /// ```
-pub fn zip() -> Term {
+pub fn zip() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -552,7 +552,7 @@ pub fn zip() -> Term {
 ///
 /// assert_eq!(beta(app!(zip_with(), add(), list1(), list1()), NOR, 0), list2());
 /// ```
-pub fn zip_with() -> Term {
+pub fn zip_with() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -595,7 +595,7 @@ pub fn zip_with() -> Term {
 ///     vec![1.into_church(), 2.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn take() -> Term {
+pub fn take() -> DeBruijnTerm {
     app!(
         Z(),
         abs!(
@@ -637,7 +637,7 @@ pub fn take() -> Term {
 ///
 /// assert_eq!(beta(app!(take_while(), is_zero(), list1), NOR, 0), list2);
 /// ```
-pub fn take_while() -> Term {
+pub fn take_while() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -680,7 +680,7 @@ pub fn take_while() -> Term {
 ///     vec![2.into_church(), 3.into_church()].into_pair_list()
 /// );
 /// ```
-pub fn drop() -> Term {
+pub fn drop() -> DeBruijnTerm {
     app!(
         Z(),
         abs!(
@@ -718,7 +718,7 @@ pub fn drop() -> Term {
 ///
 /// assert_eq!(beta(app!(drop_while(), is_zero(), list1), NOR, 0), list2);
 /// ```
-pub fn drop_while() -> Term {
+pub fn drop_while() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -756,7 +756,7 @@ pub fn drop_while() -> Term {
 /// assert_eq!(beta(app!(replicate(), 3.into_church(), 2.into_church()), NOR, 0), list1);
 /// assert_eq!(beta(app!(replicate(), 0.into_church(), 4.into_church()), NOR, 0), list2);
 /// ```
-pub fn replicate() -> Term {
+pub fn replicate() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -776,8 +776,8 @@ pub fn replicate() -> Term {
     )
 }
 
-impl From<Vec<Term>> for Term {
-    fn from(vec: Vec<Term>) -> Term {
+impl From<Vec<DeBruijnTerm>> for DeBruijnTerm {
+    fn from(vec: Vec<DeBruijnTerm>) -> DeBruijnTerm {
         let mut ret = nil();
 
         for term in vec.into_iter().rev() {

@@ -12,9 +12,9 @@ pub mod reduction;
 pub use self::parser::parse;
 pub use self::reduction::beta;
 pub use self::reduction::Order::*;
+pub use self::term::DeBruijnTerm::*;
 pub use self::term::Notation::*;
-pub use self::term::Term::*;
-pub use self::term::{abs, app, Term, UD};
+pub use self::term::{abs, app, DeBruijnTerm, UD};
 
 #[cfg(feature = "encoding")]
 pub mod data;

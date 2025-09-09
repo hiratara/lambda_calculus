@@ -4,9 +4,9 @@ use self::CToken::*;
 use self::Expression::*;
 use self::ParseError::*;
 use self::Token::*;
+use crate::term::DeBruijnTerm::*;
 pub use crate::term::Notation::*;
-use crate::term::Term::*;
-use crate::term::{abs, app, NamedTerm, Notation, Term};
+use crate::term::{abs, app, DeBruijnTerm, Notation, Term};
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt;
@@ -233,7 +233,7 @@ fn _get_ast(tokens: &[Token], pos: &mut usize) -> Result<Expression, ParseError>
 
 /// Attempts to parse the input `&str` as a lambda `Term` encoded in the given `Notation`.
 ///
-/// - lambdas can be represented either with the greek letter (λ) or a backslash (\ - 
+/// - lambdas can be represented either with the greek letter (λ) or a backslash (\ -
 /// less aesthetic, but only one byte in size)
 /// - the identifiers in `Classic` notation are `String`s of alphabetic Unicode characters
 /// - `Classic` notation ignores whitespaces where unambiguous
@@ -256,7 +256,7 @@ fn _get_ast(tokens: &[Token], pos: &mut usize) -> Result<Expression, ParseError>
 ///
 /// Returns a `ParseError` when a lexing or syntax error is encountered.
 
-pub fn parse(input: &str, notation: Notation) -> Result<NamedTerm, ParseError> {
+pub fn parse(input: &str, notation: Notation) -> Result<Term, ParseError> {
     let (tokens, context) = if notation == DeBruijn {
         (tokenize_dbr(input)?, vec![])
     } else {
@@ -272,11 +272,11 @@ pub fn parse(input: &str, notation: Notation) -> Result<NamedTerm, ParseError> {
 
     let term = fold_exprs(&exprs?)?;
 
-    Ok(NamedTerm { term, context })
+    Ok(Term { term, context })
 }
 
 #[doc(hidden)]
-pub fn fold_exprs(exprs: &[Expression]) -> Result<Term, ParseError> {
+pub fn fold_exprs(exprs: &[Expression]) -> Result<DeBruijnTerm, ParseError> {
     let mut depth = 0;
     let mut output = Vec::new();
 
@@ -291,7 +291,7 @@ pub fn fold_exprs(exprs: &[Expression]) -> Result<Term, ParseError> {
     Ok(abs!(depth, fold_terms(output)?))
 }
 
-fn fold_terms(mut terms: Vec<Term>) -> Result<Term, ParseError> {
+fn fold_terms(mut terms: Vec<DeBruijnTerm>) -> Result<DeBruijnTerm, ParseError> {
     if terms.is_empty() {
         Err(EmptyExpression)
     } else {
@@ -417,7 +417,7 @@ mod tests {
         let y = "λ(λ2(11))(λ2(11))";
         assert_eq!(
             parse(y, DeBruijn).unwrap(),
-            NamedTerm {
+            Term {
                 term: abs(app(
                     abs(app(Var(2), app(Var(1), Var(1)))),
                     abs(app(Var(2), app(Var(1), Var(1))))
@@ -432,7 +432,7 @@ mod tests {
         let quine = "λ1((λ11)(λλλλλ14(3(55)2)))1";
         assert_eq!(
             parse(quine, DeBruijn).unwrap(),
-            NamedTerm {
+            Term {
                 term: abs(app(
                     app(
                         Var(1),
@@ -460,7 +460,7 @@ mod tests {
                    (λ4(λ4(λ2(14)))5))))(33)2)(λ1((λ11)(λ11)))";
         assert_eq!(
             parse(blc, DeBruijn).unwrap(),
-            NamedTerm {
+            Term {
                 term: app(
                     app(
                         abs(app(Var(1), Var(1))),
@@ -489,7 +489,10 @@ mod tests {
                                                                             app(
                                                                                 Var(3),
                                                                                 abs(app(
-                                                                                    app(Var(1), Var(2)),
+                                                                                    app(
+                                                                                        Var(1),
+                                                                                        Var(2)
+                                                                                    ),
                                                                                     Var(3)
                                                                                 ))
                                                                             )

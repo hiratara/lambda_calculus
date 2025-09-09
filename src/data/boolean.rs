@@ -1,19 +1,19 @@
 //! [Lambda-encoded booleans](https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans)
 
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// A lambda-encoded boolean `true`.
 ///
 /// TRUE ≡ λab.a ≡ λ λ 2
-pub fn tru() -> Term {
+pub fn tru() -> DeBruijnTerm {
     abs!(2, Var(2))
 }
 
 /// A lambda-encoded boolean `false`.
 ///
 /// FALSE ≡ λab.b ≡ λ λ 1
-pub fn fls() -> Term {
+pub fn fls() -> DeBruijnTerm {
     abs!(2, Var(1))
 }
 
@@ -31,7 +31,7 @@ pub fn fls() -> Term {
 /// assert_eq!(beta(app!(and(), fls(), tru()), NOR, 0), fls());
 /// assert_eq!(beta(app!(and(), fls(), fls()), NOR, 0), fls());
 /// ```
-pub fn and() -> Term {
+pub fn and() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(1), Var(2)))
 }
 
@@ -49,7 +49,7 @@ pub fn and() -> Term {
 /// assert_eq!(beta(app!(or(), fls(), tru()), NOR, 0), tru());
 /// assert_eq!(beta(app!(or(), fls(), fls()), NOR, 0), fls());
 /// ```
-pub fn or() -> Term {
+pub fn or() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(2), Var(1)))
 }
 
@@ -65,7 +65,7 @@ pub fn or() -> Term {
 /// assert_eq!(beta(app!(not(), tru()), NOR, 0), fls());
 /// assert_eq!(beta(app!(not(), fls()), NOR, 0), tru());
 /// ```
-pub fn not() -> Term {
+pub fn not() -> DeBruijnTerm {
     abs(app!(Var(1), fls(), tru()))
 }
 
@@ -83,7 +83,7 @@ pub fn not() -> Term {
 /// assert_eq!(beta(app!(xor(), fls(), tru()), NOR, 0), tru());
 /// assert_eq!(beta(app!(xor(), fls(), fls()), NOR, 0), fls());
 /// ```
-pub fn xor() -> Term {
+pub fn xor() -> DeBruijnTerm {
     abs!(2, app!(Var(2), app!(not(), Var(1)), Var(1)))
 }
 
@@ -101,7 +101,7 @@ pub fn xor() -> Term {
 /// assert_eq!(beta(app!(nor(), fls(), tru()), NOR, 0), fls());
 /// assert_eq!(beta(app!(nor(), fls(), fls()), NOR, 0), tru());
 /// ```
-pub fn nor() -> Term {
+pub fn nor() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(2), Var(1), fls(), tru()))
 }
 
@@ -120,7 +120,7 @@ pub fn nor() -> Term {
 /// assert_eq!(beta(app!(xnor(), fls(), tru()), NOR, 0), fls());
 /// assert_eq!(beta(app!(xnor(), fls(), fls()), NOR, 0), tru());
 /// ```
-pub fn xnor() -> Term {
+pub fn xnor() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(1), app(not(), Var(1))))
 }
 
@@ -138,7 +138,7 @@ pub fn xnor() -> Term {
 /// assert_eq!(beta(app!(nand(), fls(), tru()), NOR, 0), tru());
 /// assert_eq!(beta(app!(nand(), fls(), fls()), NOR, 0), tru());
 /// ```
-pub fn nand() -> Term {
+pub fn nand() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(1), Var(2), fls(), tru()))
 }
 
@@ -155,7 +155,7 @@ pub fn nand() -> Term {
 /// assert_eq!(beta(app!(if_else(), tru(), tru(), fls()), NOR, 0), tru());
 /// assert_eq!(beta(app!(if_else(), fls(), tru(), fls()), NOR, 0), fls());
 /// ```
-pub fn if_else() -> Term {
+pub fn if_else() -> DeBruijnTerm {
     abs!(3, app!(Var(3), Var(2), Var(1)))
 }
 
@@ -173,12 +173,12 @@ pub fn if_else() -> Term {
 /// assert_eq!(beta(app!(imply(), fls(), tru()), NOR, 0), tru());
 /// assert_eq!(beta(app!(imply(), fls(), fls()), NOR, 0), tru());
 /// ```
-pub fn imply() -> Term {
+pub fn imply() -> DeBruijnTerm {
     abs!(2, app!(or(), app(not(), Var(2)), Var(1)))
 }
 
-impl From<bool> for Term {
-    fn from(b: bool) -> Term {
+impl From<bool> for DeBruijnTerm {
+    fn from(b: bool) -> DeBruijnTerm {
         if b {
             tru()
         } else {

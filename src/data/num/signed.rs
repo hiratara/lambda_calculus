@@ -7,8 +7,8 @@ use crate::data::num::convert::Encoding;
 use crate::data::num::convert::Encoding::*;
 use crate::data::num::{church, parigot, scott, stumpfu};
 use crate::data::pair::{fst, pair, snd, swap};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Applied to a numeral with a specified encoding it produces a pair representing its signed
 /// equivalent.
@@ -22,7 +22,7 @@ use crate::term::{abs, app, Term};
 ///
 /// assert_eq!(beta(app(to_signed(Church), 1.into_church()), NOR, 0), 1.into_signed(Church));
 /// ```
-pub fn to_signed(encoding: Encoding) -> Term {
+pub fn to_signed(encoding: Encoding) -> DeBruijnTerm {
     let zero = match encoding {
         Church => church::zero(),
         Scott => scott::zero(),
@@ -45,7 +45,7 @@ pub fn to_signed(encoding: Encoding) -> Term {
 ///
 /// assert_eq!(beta(app(neg(), 1.into_signed(Church)), NOR, 0), (-1).into_signed(Church));
 /// ```
-pub fn neg() -> Term {
+pub fn neg() -> DeBruijnTerm {
     swap()
 }
 
@@ -65,7 +65,7 @@ pub fn neg() -> Term {
 /// assert_eq!(beta(app(simplify(Church), (0, 3).into_church()), NOR, 0), (0, 3).into_church());
 /// assert_eq!(beta(app(simplify(Church), (4, 1).into_church()), NOR, 0), (3, 0).into_church());
 /// ```
-pub fn simplify(encoding: Encoding) -> Term {
+pub fn simplify(encoding: Encoding) -> DeBruijnTerm {
     let is_zero = || match encoding {
         Church => church::is_zero(),
         Scott => scott::is_zero(),
@@ -122,7 +122,7 @@ pub fn simplify(encoding: Encoding) -> Term {
 /// assert_eq!(beta(app(modulus(Church),    1.into_signed(Church)), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app(modulus(Church), (-1).into_signed(Church)), NOR, 0), 1.into_church());
 /// ```
-pub fn modulus(encoding: Encoding) -> Term {
+pub fn modulus(encoding: Encoding) -> DeBruijnTerm {
     let is_zero = match encoding {
         Church => church::is_zero(),
         Scott => scott::is_zero(),
@@ -158,7 +158,7 @@ pub fn modulus(encoding: Encoding) -> Term {
 ///     beta(2.into_signed(Church), NOR, 0)
 /// );
 /// ```
-pub fn add(encoding: Encoding) -> Term {
+pub fn add(encoding: Encoding) -> DeBruijnTerm {
     let add = || match encoding {
         Church => church::add(),
         Scott => scott::add(),
@@ -196,7 +196,7 @@ pub fn add(encoding: Encoding) -> Term {
 ///     beta((-1).into_signed(Church), NOR, 0)
 /// );
 /// ```
-pub fn sub(encoding: Encoding) -> Term {
+pub fn sub(encoding: Encoding) -> DeBruijnTerm {
     let add = || match encoding {
         Church => church::add(),
         Scott => scott::add(),
@@ -236,7 +236,7 @@ pub fn sub(encoding: Encoding) -> Term {
 ///     beta((-6).into_signed(Church), NOR, 0)
 /// );
 /// ```
-pub fn mul(encoding: Encoding) -> Term {
+pub fn mul(encoding: Encoding) -> DeBruijnTerm {
     let mul = || match encoding {
         Church => church::mul(),
         Scott => scott::mul(),

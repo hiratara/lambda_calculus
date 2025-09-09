@@ -3,8 +3,8 @@
 #![allow(missing_docs)]
 
 use self::Encoding::*;
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// The type of numeric encoding.
 #[derive(Debug, Clone, Copy)]
@@ -20,7 +20,7 @@ macro_rules! make_trait {
     ($trait_name:ident, $function_name:ident) => {
         pub trait $trait_name {
             #[doc = "Performs the conversion."]
-            fn $function_name(self) -> Term;
+            fn $function_name(self) -> DeBruijnTerm;
         }
     };
 }
@@ -34,11 +34,11 @@ make_trait!(IntoBinaryNum, into_binary);
 pub trait IntoSignedNum {
     #[doc = "Performs the conversion. The supported `Encoding`s are `Church`, `Scott`, `Parigot` and
           `StumpFu`."]
-    fn into_signed(self, encoding: Encoding) -> Term;
+    fn into_signed(self, encoding: Encoding) -> DeBruijnTerm;
 }
 
 impl IntoChurchNum for usize {
-    fn into_church(self) -> Term {
+    fn into_church(self) -> DeBruijnTerm {
         let mut ret = Var(1);
 
         for _ in 0..self {
@@ -50,7 +50,7 @@ impl IntoChurchNum for usize {
 }
 
 impl IntoScottNum for usize {
-    fn into_scott(self) -> Term {
+    fn into_scott(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(2));
 
         for _ in 0..self {
@@ -62,7 +62,7 @@ impl IntoScottNum for usize {
 }
 
 impl IntoParigotNum for usize {
-    fn into_parigot(self) -> Term {
+    fn into_parigot(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(1));
 
         for _ in 0..self {
@@ -81,7 +81,7 @@ impl IntoParigotNum for usize {
 }
 
 impl IntoStumpFuNum for usize {
-    fn into_stumpfu(self) -> Term {
+    fn into_stumpfu(self) -> DeBruijnTerm {
         let mut ret = abs!(2, Var(1));
 
         for n in 1..self + 1 {
@@ -93,7 +93,7 @@ impl IntoStumpFuNum for usize {
 }
 
 impl IntoBinaryNum for usize {
-    fn into_binary(self) -> Term {
+    fn into_binary(self) -> DeBruijnTerm {
         let mut ret = Var(3);
 
         if self != 0 {
@@ -113,7 +113,7 @@ impl IntoBinaryNum for usize {
 }
 
 impl IntoSignedNum for i32 {
-    fn into_signed(self, encoding: Encoding) -> Term {
+    fn into_signed(self, encoding: Encoding) -> DeBruijnTerm {
         let modulus = self.unsigned_abs() as usize;
 
         let numeral = match encoding {
@@ -139,7 +139,7 @@ macro_rules! impl_pair {
             T: $trait_name,
             U: $trait_name,
         {
-            fn $function_name(self) -> Term {
+            fn $function_name(self) -> DeBruijnTerm {
                 abs(app!(
                     Var(1),
                     (self.0).$function_name(),
@@ -162,7 +162,7 @@ macro_rules! impl_option {
         where
             T: $trait_name,
         {
-            fn $function_name(self) -> Term {
+            fn $function_name(self) -> DeBruijnTerm {
                 match self {
                     None => abs!(2, Var(2)),
                     Some(value) => abs!(2, app(Var(1), value.$function_name())),
@@ -185,7 +185,7 @@ macro_rules! impl_result {
             T: $trait_name,
             U: $trait_name,
         {
-            fn $function_name(self) -> Term {
+            fn $function_name(self) -> DeBruijnTerm {
                 match self {
                     Ok(ok) => abs!(2, app(Var(2), ok.$function_name())),
                     Err(err) => abs!(2, app(Var(1), err.$function_name())),

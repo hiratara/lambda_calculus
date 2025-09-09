@@ -1,8 +1,8 @@
 //! [Parigot numerals](https://ir.uiowa.edu/cgi/viewcontent.cgi?article=5357&context=etd)
 
 use crate::data::boolean::{fls, tru};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Produces a Parigot-encoded number zero; equivalent to `boolean::fls`.
 ///
@@ -15,7 +15,7 @@ use crate::term::{abs, app, Term};
 ///
 /// assert_eq!(zero(), 0.into_parigot());
 /// ```
-pub fn zero() -> Term {
+pub fn zero() -> DeBruijnTerm {
     fls()
 }
 
@@ -32,7 +32,7 @@ pub fn zero() -> Term {
 /// assert_eq!(beta(app(is_zero(), 0.into_parigot()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_zero(), 1.into_parigot()), NOR, 0), false.into());
 /// ```
-pub fn is_zero() -> Term {
+pub fn is_zero() -> DeBruijnTerm {
     abs(app!(Var(1), abs!(2, fls()), tru()))
 }
 
@@ -47,7 +47,7 @@ pub fn is_zero() -> Term {
 ///
 /// assert_eq!(one(), 1.into_parigot());
 /// ```
-pub fn one() -> Term {
+pub fn one() -> DeBruijnTerm {
     abs!(2, app!(Var(2), zero(), Var(1)))
 }
 
@@ -63,7 +63,7 @@ pub fn one() -> Term {
 /// assert_eq!(beta(app(succ(), 0.into_parigot()), NOR, 0), 1.into_parigot());
 /// assert_eq!(beta(app(succ(), 1.into_parigot()), NOR, 0), 2.into_parigot());
 /// ```
-pub fn succ() -> Term {
+pub fn succ() -> DeBruijnTerm {
     abs!(3, app!(Var(2), Var(3), app!(Var(3), Var(2), Var(1))))
 }
 
@@ -79,7 +79,7 @@ pub fn succ() -> Term {
 /// assert_eq!(beta(app(pred(), 1.into_parigot()), NOR, 0), 0.into_parigot());
 /// assert_eq!(beta(app(pred(), 3.into_parigot()), NOR, 0), 2.into_parigot());
 /// ```
-pub fn pred() -> Term {
+pub fn pred() -> DeBruijnTerm {
     abs(app!(Var(1), abs!(2, Var(2)), zero()))
 }
 
@@ -95,7 +95,7 @@ pub fn pred() -> Term {
 /// assert_eq!(beta(app!(add(), 1.into_parigot(), 2.into_parigot()), NOR, 0), 3.into_parigot());
 /// assert_eq!(beta(app!(add(), 2.into_parigot(), 3.into_parigot()), NOR, 0), 5.into_parigot());
 /// ```
-pub fn add() -> Term {
+pub fn add() -> DeBruijnTerm {
     abs!(2, app!(Var(2), abs(succ()), Var(1)))
 }
 
@@ -112,7 +112,7 @@ pub fn add() -> Term {
 /// assert_eq!(beta(app!(sub(), 3.into_parigot(), 1.into_parigot()), NOR, 0), 2.into_parigot());
 /// assert_eq!(beta(app!(sub(), 5.into_parigot(), 2.into_parigot()), NOR, 0), 3.into_parigot());
 /// ```
-pub fn sub() -> Term {
+pub fn sub() -> DeBruijnTerm {
     abs!(2, app!(Var(1), abs(pred()), Var(2)))
 }
 
@@ -128,6 +128,6 @@ pub fn sub() -> Term {
 /// assert_eq!(beta(app!(mul(), 1.into_parigot(), 2.into_parigot()), NOR, 0), 2.into_parigot());
 /// assert_eq!(beta(app!(mul(), 2.into_parigot(), 3.into_parigot()), NOR, 0), 6.into_parigot());
 /// ```
-pub fn mul() -> Term {
+pub fn mul() -> DeBruijnTerm {
     abs!(2, app!(Var(2), abs(app(add(), Var(2))), zero()))
 }

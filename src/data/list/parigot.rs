@@ -1,13 +1,13 @@
 //! [Parigot list](https://ifl2014.github.io/submissions/ifl2014_submission_13.pdf)
 
 use crate::data::boolean::{fls, tru};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term, UD};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm, UD};
 
 /// Produces a `nil`, the last link of a Parigot-encoded list; equivalent to `boolean::tru`.
 ///
 /// NIL ≡ λab.a ≡ λ λ 2 ≡ TRUE
-pub fn nil() -> Term {
+pub fn nil() -> DeBruijnTerm {
     tru()
 }
 
@@ -22,7 +22,7 @@ pub fn nil() -> Term {
 ///
 /// assert_eq!(beta(app(is_nil(), nil()), NOR, 0), true.into());
 /// ```
-pub fn is_nil() -> Term {
+pub fn is_nil() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), abs!(2, fls())))
 }
 
@@ -57,7 +57,7 @@ pub fn is_nil() -> Term {
 ///     list_into
 /// );
 /// ```
-pub fn cons() -> Term {
+pub fn cons() -> DeBruijnTerm {
     abs!(
         4,
         app!(
@@ -85,7 +85,7 @@ pub fn cons() -> Term {
 ///     1.into_parigot()
 /// );
 /// ```
-pub fn head() -> Term {
+pub fn head() -> DeBruijnTerm {
     abs(app!(Var(1), UD, abs!(3, Var(3))))
 }
 
@@ -105,6 +105,6 @@ pub fn head() -> Term {
 ///     vec![2, 3].into_parigot()
 /// );
 /// ```
-pub fn tail() -> Term {
+pub fn tail() -> DeBruijnTerm {
     abs(app!(Var(1), UD, abs!(3, Var(2))))
 }

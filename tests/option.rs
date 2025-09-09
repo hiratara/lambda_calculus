@@ -80,8 +80,8 @@ fn option_unwrap_or() {
 
 #[test]
 fn option_and_then() {
-    let some_succ: Term = abs(app(some(), app(succ(), Var(1))));
-    let return_none: Term = abs(none());
+    let some_succ: DeBruijnTerm = abs(app(some(), app(succ(), Var(1))));
+    let return_none: DeBruijnTerm = abs(none());
 
     assert_eq!(
         beta(app!(and_then(), none(), some_succ.clone()), NOR, 0),

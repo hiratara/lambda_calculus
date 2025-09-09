@@ -11,8 +11,8 @@
 
 #![allow(non_snake_case)]
 
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// I - the identity combinator.
 ///
@@ -26,7 +26,7 @@ use crate::term::{abs, app, Term};
 /// assert_eq!(beta(app(I(), Var(1)), NOR, 0), Var(1));
 /// assert_eq!(beta(app(I(), abs(Var(1))), NOR, 0), abs(Var(1)));
 /// ```
-pub fn I() -> Term {
+pub fn I() -> DeBruijnTerm {
     abs(Var(1))
 }
 
@@ -42,7 +42,7 @@ pub fn I() -> Term {
 /// assert_eq!(beta(app!(K(), Var(1), Var(2)), NOR, 0), Var(1));
 /// assert_eq!(beta(app!(K(), Var(2), Var(1)), NOR, 0), Var(2));
 /// ```
-pub fn K() -> Term {
+pub fn K() -> DeBruijnTerm {
     abs!(2, Var(2))
 }
 
@@ -60,7 +60,7 @@ pub fn K() -> Term {
 ///     app!(Var(1), Var(3), app(Var(2), Var(3)))
 /// );
 /// ```
-pub fn S() -> Term {
+pub fn S() -> DeBruijnTerm {
     abs!(3, app!(Var(3), Var(1), app(Var(2), Var(1))))
 }
 
@@ -77,7 +77,7 @@ pub fn S() -> Term {
 /// assert_eq!(beta(app(i(), app(i(), app(i(), i()))), NOR, 0), K());
 /// assert_eq!(beta(app(i(), app(i(), app(i(), app(i(), i())))), NOR, 0), S());
 /// ```
-pub fn i() -> Term {
+pub fn i() -> DeBruijnTerm {
     abs(app!(Var(1), S(), K()))
 }
 
@@ -95,7 +95,7 @@ pub fn i() -> Term {
 ///     app(Var(1), app(Var(2), Var(3)))
 /// );
 /// ```
-pub fn B() -> Term {
+pub fn B() -> DeBruijnTerm {
     abs!(3, app(Var(3), app(Var(2), Var(1))))
 }
 
@@ -113,7 +113,7 @@ pub fn B() -> Term {
 ///     app!(Var(1), Var(3), Var(2))
 /// );
 /// ```
-pub fn C() -> Term {
+pub fn C() -> DeBruijnTerm {
     abs!(3, app!(Var(3), Var(1), Var(2)))
 }
 
@@ -131,7 +131,7 @@ pub fn C() -> Term {
 ///     app!(Var(1), Var(2), Var(2))
 /// );
 /// ```
-pub fn W() -> Term {
+pub fn W() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(1), Var(1)))
 }
 
@@ -149,7 +149,7 @@ pub fn W() -> Term {
 ///     app(Var(1), Var(1))
 /// );
 /// ```
-pub fn o() -> Term {
+pub fn o() -> DeBruijnTerm {
     abs(app(Var(1), Var(1)))
 }
 
@@ -164,7 +164,7 @@ pub fn o() -> Term {
 ///
 /// assert_eq!(beta(O(), NOR, 3), O()); // 3 β-reductions do nothing
 /// ```
-pub fn O() -> Term {
+pub fn O() -> DeBruijnTerm {
     app(o(), o())
 }
 
@@ -180,14 +180,14 @@ pub fn O() -> Term {
 /// use lambda_calculus::combinators::Y;
 /// use lambda_calculus::*;
 ///
-/// fn dummy() -> Term { abs(Var(2)) } // a dummy term that won't easily reduce
+/// fn dummy() -> DeBruijnTerm { abs(Var(2)) } // a dummy term that won't easily reduce
 ///
 /// assert_eq!(
 ///     beta(app(Y(), dummy()), NOR, 0),
 ///     beta(app(dummy(), app(Y(), dummy())), NOR, 0)
 /// );
 /// ```
-pub fn Y() -> Term {
+pub fn Y() -> DeBruijnTerm {
     abs(app(
         abs(app(Var(2), app(Var(1), Var(1)))),
         abs(app(Var(2), app(Var(1), Var(1)))),
@@ -209,14 +209,14 @@ pub fn Y() -> Term {
 /// use lambda_calculus::combinators::Z;
 /// use lambda_calculus::*;
 ///
-/// fn dummy() -> Term { abs(Var(2)) } // a dummy term that won't easily reduce
+/// fn dummy() -> DeBruijnTerm { abs(Var(2)) } // a dummy term that won't easily reduce
 ///
 /// assert_eq!(
 ///     beta(app(Z(), dummy()), CBV, 0),
 ///     beta(app(dummy(), app(Z(), dummy())), CBV, 0)
 /// );
 /// ```
-pub fn Z() -> Term {
+pub fn Z() -> DeBruijnTerm {
     abs(app(
         abs(app(Var(2), abs(app!(Var(2), Var(2), Var(1))))),
         abs(app(Var(2), abs(app!(Var(2), Var(2), Var(1))))),
@@ -237,7 +237,7 @@ pub fn Z() -> Term {
 ///     app(Var(2), Var(1))
 /// );
 /// ```
-pub fn R() -> Term {
+pub fn R() -> DeBruijnTerm {
     abs!(2, app(Var(1), Var(2)))
 }
 
@@ -253,14 +253,14 @@ pub fn R() -> Term {
 /// use lambda_calculus::combinators::T;
 /// use lambda_calculus::*;
 ///
-/// fn dummy() -> Term { abs(Var(2)) } // a dummy term that won't easily reduce
+/// fn dummy() -> DeBruijnTerm { abs(Var(2)) } // a dummy term that won't easily reduce
 ///
 /// assert_eq!(
 ///     beta(app(T(), dummy()), NOR, 0),
 ///     beta(app(dummy(), app(T(), dummy())), NOR, 0)
 /// );
 /// ```
-pub fn T() -> Term {
+pub fn T() -> DeBruijnTerm {
     app(
         abs!(2, app(Var(1), app!(Var(2), Var(2), Var(1)))),
         abs!(2, app(Var(1), app!(Var(2), Var(2), Var(1)))),

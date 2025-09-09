@@ -1,8 +1,8 @@
 //! [β-reduction](https://en.wikipedia.org/wiki/Beta_normal_form) for lambda `Term`s
 
 pub use self::Order::*;
-use crate::term::Term::*;
-use crate::term::{Term, TermError};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{DeBruijnTerm, TermError};
 use std::{cmp, fmt, mem};
 
 /// The [evaluation order](http://www.cs.cornell.edu/courses/cs6110/2014sp/Handouts/Sestoft.pdf) of
@@ -46,12 +46,12 @@ pub enum Order {
 ///
 /// assert_eq!(beta(expr.term, NOR, 0), reduced.term);
 /// ```
-pub fn beta(mut term: Term, order: Order, limit: usize) -> Term {
+pub fn beta(mut term: DeBruijnTerm, order: Order, limit: usize) -> DeBruijnTerm {
     term.reduce(order, limit);
     term
 }
 
-impl Term {
+impl DeBruijnTerm {
     /// Applies a `Term` to `self` via substitution and variable update.
     ///
     /// # Example
@@ -69,7 +69,7 @@ impl Term {
     /// # Errors
     ///
     /// Returns a `TermError` if `self` is not an `Abs`traction.
-    pub fn apply(&mut self, rhs: &Term) -> Result<(), TermError> {
+    pub fn apply(&mut self, rhs: &DeBruijnTerm) -> Result<(), TermError> {
         self.unabs_ref()?;
 
         self._apply(rhs, 0);
@@ -80,7 +80,7 @@ impl Term {
         Ok(())
     }
 
-    fn _apply(&mut self, rhs: &Term, depth: usize) {
+    fn _apply(&mut self, rhs: &DeBruijnTerm, depth: usize) {
         match self {
             Var(i) => match (*i).cmp(&depth) {
                 cmp::Ordering::Equal => {

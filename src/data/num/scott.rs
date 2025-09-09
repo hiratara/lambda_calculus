@@ -2,8 +2,8 @@
 
 use crate::combinators::Z;
 use crate::data::boolean::{fls, tru};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Produces a Scott-encoded number zero; equivalent to `boolean::tru`.
 ///
@@ -16,7 +16,7 @@ use crate::term::{abs, app, Term};
 ///
 /// assert_eq!(zero(), 0.into_scott());
 /// ```
-pub fn zero() -> Term {
+pub fn zero() -> DeBruijnTerm {
     tru()
 }
 
@@ -34,7 +34,7 @@ pub fn zero() -> Term {
 /// assert_eq!(beta(app(is_zero(), 0.into_scott()), NOR, 0), tru());
 /// assert_eq!(beta(app(is_zero(), 1.into_scott()), NOR, 0), fls());
 /// ```
-pub fn is_zero() -> Term {
+pub fn is_zero() -> DeBruijnTerm {
     abs(app!(Var(1), tru(), abs(fls())))
 }
 
@@ -49,7 +49,7 @@ pub fn is_zero() -> Term {
 ///
 /// assert_eq!(one(), 1.into_scott());
 /// ```
-pub fn one() -> Term {
+pub fn one() -> DeBruijnTerm {
     abs!(2, app(Var(1), zero()))
 }
 
@@ -65,7 +65,7 @@ pub fn one() -> Term {
 /// assert_eq!(beta(app(succ(), 0.into_scott()), NOR, 0), 1.into_scott());
 /// assert_eq!(beta(app(succ(), 1.into_scott()), NOR, 0), 2.into_scott());
 /// ```
-pub fn succ() -> Term {
+pub fn succ() -> DeBruijnTerm {
     abs!(3, app(Var(1), Var(3)))
 }
 
@@ -81,7 +81,7 @@ pub fn succ() -> Term {
 /// assert_eq!(beta(app(pred(), 1.into_scott()), NOR, 0), 0.into_scott());
 /// assert_eq!(beta(app(pred(), 3.into_scott()), NOR, 0), 2.into_scott());
 /// ```
-pub fn pred() -> Term {
+pub fn pred() -> DeBruijnTerm {
     abs(app!(Var(1), zero(), abs(Var(1))))
 }
 
@@ -101,7 +101,7 @@ pub fn pred() -> Term {
 ///
 /// This function will overflow the stack if used with an applicative-family (`APP` or `HAP`)
 /// reduction order.
-pub fn add() -> Term {
+pub fn add() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -148,7 +148,7 @@ pub fn sub() -> Term {
 ///
 /// This function will overflow the stack if used with an applicative-family (`APP` or `HAP`)
 /// reduction order.
-pub fn mul() -> Term {
+pub fn mul() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -178,7 +178,7 @@ pub fn mul() -> Term {
 ///
 /// This function will overflow the stack if used with an applicative-family (`APP` or `HAP`)
 /// reduction order.
-pub fn pow() -> Term {
+pub fn pow() -> DeBruijnTerm {
     app(
         Z(),
         abs!(
@@ -210,7 +210,7 @@ pub fn pow() -> Term {
 ///
 /// This function will overflow the stack if used with an applicative-family (`APP` or `HAP`)
 /// reduction order.
-pub fn to_church() -> Term {
+pub fn to_church() -> DeBruijnTerm {
     abs!(
         3,
         app!(

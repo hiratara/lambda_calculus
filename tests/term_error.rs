@@ -1,6 +1,6 @@
 extern crate lambda_calculus as lambda;
 
-use lambda::term::Term;
+use lambda::term::DeBruijnTerm;
 use std::error::Error;
 
 #[test]
@@ -12,6 +12,6 @@ fn term_error_question_mark_operator() {
 }
 
 fn using_question_mark_operator() -> Result<(), Box<dyn Error>> {
-    Term::Var(0).unabs()?;
+    DeBruijnTerm::Var(0).unabs()?;
     Ok(())
 }

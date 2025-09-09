@@ -27,7 +27,7 @@ macro_rules! test_list {
     );
 }
 
-fn nil() -> Vec<Term> {
+fn nil() -> Vec<DeBruijnTerm> {
     vec![]
 } // a nil workaround for macro purposes
 

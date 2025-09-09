@@ -3,8 +3,8 @@
 use crate::combinators::I;
 use crate::data::boolean::{fls, tru};
 use crate::data::option::{none, some};
-use crate::term::Term::*;
-use crate::term::{abs, app, Term};
+use crate::term::DeBruijnTerm::*;
+use crate::term::{abs, app, DeBruijnTerm};
 
 /// Applied to an argument it consumes it and produces a lambda-encoded `Result::Ok` that contains
 /// it.
@@ -19,7 +19,7 @@ use crate::term::{abs, app, Term};
 /// let ok_one: Result<usize, usize> = Ok(1);
 /// assert_eq!(beta(app(ok(), 1.into_church()), NOR, 0), ok_one.into_church());
 /// ```
-pub fn ok() -> Term {
+pub fn ok() -> DeBruijnTerm {
     abs!(3, app(Var(2), Var(3)))
 }
 
@@ -36,7 +36,7 @@ pub fn ok() -> Term {
 /// let err_two: Result<usize, usize> = Err(2);
 /// assert_eq!(beta(app(err(), 2.into_church()), NOR, 0), err_two.into_church());
 /// ```
-pub fn err() -> Term {
+pub fn err() -> DeBruijnTerm {
     abs!(3, app(Var(1), Var(3)))
 }
 
@@ -56,7 +56,7 @@ pub fn err() -> Term {
 /// assert_eq!(beta(app(is_ok(), ok_one.into_church()), NOR, 0), true.into());
 /// assert_eq!(beta(app(is_ok(), err_two.into_church()), NOR, 0), false.into());
 /// ```
-pub fn is_ok() -> Term {
+pub fn is_ok() -> DeBruijnTerm {
     abs(app!(Var(1), abs(tru()), abs(fls())))
 }
 
@@ -76,7 +76,7 @@ pub fn is_ok() -> Term {
 /// assert_eq!(beta(app(is_err(), ok_one.into_church()), NOR, 0), false.into());
 /// assert_eq!(beta(app(is_err(), err_two.into_church()), NOR, 0), true.into());
 /// ```
-pub fn is_err() -> Term {
+pub fn is_err() -> DeBruijnTerm {
     abs(app!(Var(1), abs(fls()), abs(tru())))
 }
 
@@ -96,7 +96,7 @@ pub fn is_err() -> Term {
 /// assert_eq!(beta(app(option_ok(), ok_one.into_church()), NOR, 0), Some(1).into_church());
 /// assert_eq!(beta(app(option_ok(), err_two.into_church()), NOR, 0), none());
 /// ```
-pub fn option_ok() -> Term {
+pub fn option_ok() -> DeBruijnTerm {
     abs(app!(Var(1), some(), abs(none())))
 }
 
@@ -117,7 +117,7 @@ pub fn option_ok() -> Term {
 /// assert_eq!(beta(app(option_err(), ok_one.into_church()), NOR, 0), none());
 /// assert_eq!(beta(app(option_err(), err_two.into_church()), NOR, 0), Some(2).into_church());
 /// ```
-pub fn option_err() -> Term {
+pub fn option_err() -> DeBruijnTerm {
     abs(app!(Var(1), abs(none()), some()))
 }
 
@@ -137,7 +137,7 @@ pub fn option_err() -> Term {
 /// assert_eq!(beta(app!(unwrap_or(), 3.into_church(), ok_one.into_church()), NOR, 0), 1.into_church());
 /// assert_eq!(beta(app!(unwrap_or(), 3.into_church(), err_two.into_church()), NOR, 0), 3.into_church());
 /// ```
-pub fn unwrap_or() -> Term {
+pub fn unwrap_or() -> DeBruijnTerm {
     abs!(2, app!(Var(1), I(), abs(Var(3))))
 }
 
@@ -159,7 +159,7 @@ pub fn unwrap_or() -> Term {
 /// assert_eq!(beta(app!(map(), succ(), ok_one.into_church()), NOR, 0), ok_two.into_church());
 /// assert_eq!(beta(app!(map(), succ(), err_two.into_church()), NOR, 0), err_two.into_church());
 /// ```
-pub fn map() -> Term {
+pub fn map() -> DeBruijnTerm {
     abs!(2, app!(Var(1), abs(app(ok(), app(Var(3), Var(1)))), err()))
 }
 
@@ -181,7 +181,7 @@ pub fn map() -> Term {
 /// assert_eq!(beta(app!(map_err(), succ(), ok_one.into_church()), NOR, 0), ok_one.into_church());
 /// assert_eq!(beta(app!(map_err(), succ(), err_two.into_church()), NOR, 0), err_three.into_church());
 /// ```
-pub fn map_err() -> Term {
+pub fn map_err() -> DeBruijnTerm {
     abs!(2, app!(Var(1), ok(), abs(app(err(), app(Var(3), Var(1))))))
 }
 
@@ -197,7 +197,7 @@ pub fn map_err() -> Term {
 /// use lambda_calculus::*;
 ///
 /// // Equivalent to a |x| { Ok(x + 1) } closure in Rust
-/// let ok_succ: Term = abs(app(ok(), app(succ(), Var(1))));
+/// let ok_succ: DeBruijnTerm = abs(app(ok(), app(succ(), Var(1))));
 ///
 /// let ok_one: Result<usize, usize> = Ok(1);
 /// let ok_two: Result<usize, usize> = Ok(2);
@@ -213,12 +213,12 @@ pub fn map_err() -> Term {
 ///     ok_two.into_church()
 /// );
 /// ```
-pub fn and_then() -> Term {
+pub fn and_then() -> DeBruijnTerm {
     abs!(2, app!(Var(2), Var(1), err()))
 }
 
-impl From<Result<Term, Term>> for Term {
-    fn from(result: Result<Term, Term>) -> Term {
+impl From<Result<DeBruijnTerm, DeBruijnTerm>> for DeBruijnTerm {
+    fn from(result: Result<DeBruijnTerm, DeBruijnTerm>) -> DeBruijnTerm {
         match result {
             Ok(ok) => abs!(2, app(Var(2), ok)),
             Err(err) => abs!(2, app(Var(1), err)),
